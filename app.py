@@ -1,15 +1,17 @@
-# app.py
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import joblib
 import numpy as np
+import os
 
 app = Flask(__name__)
 CORS(app)
 
 # Load the model and label encoder
-xgb = joblib.load('xgboost_model.pkl')
-label_encoder = joblib.load('label_encoder.pkl')
+model_path = os.path.join('models', 'xgboost_model.pkl')
+encoder_path = os.path.join('models', 'label_encoder.pkl')
+xgb = joblib.load(model_path)
+label_encoder = joblib.load(encoder_path)
 
 @app.route('/')
 def index():
@@ -18,15 +20,15 @@ def index():
 @app.route('/predict', methods=['POST'])
 def predict_crop():
     data = request.get_json()
-    N = data['N']
-    P = data['P']
-    K = data['K']
-    temperature = data['temperature']
-    humidity = data['humidity']
-    ph = data['ph']
-    rainfall = data['rainfall']
+    N = float(data['N'])
+    P = float(data['P'])
+    K = float(data['K'])
+    temperature = float(data['temperature'])
+    humidity = float(data['humidity'])
+    ph = float(data['ph'])
+    rainfall = float(data['rainfall'])
     
-    input_data = np.array([[N, P, K, temperature, humidity, ph, rainfall]])
+    input_data = np.array([[N, P, K, temperature, humidity, ph, rainfall]], dtype=np.float32)
     prediction = xgb.predict(input_data)
     crop = label_encoder.inverse_transform(prediction)
     return jsonify({"recommended_crop": crop[0]})
